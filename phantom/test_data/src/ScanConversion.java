@@ -1,15 +1,13 @@
-package com.echopen.asso.echopen.preproc;
-
-import com.echopen.asso.echopen.utils.Constants;
-
-import java.util.ArrayList;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.*;
 
 /**
  * Created by mehdibenchoufi on 16/09/15.
  *
  * Description de la classe
  */
-public class ScanConversion {
+public class ScanConversion extends JPanel {
 
     private int numPixels;
 
@@ -20,10 +18,6 @@ public class ScanConversion {
     private int[] indexData = new int[numPixels];
 
     private int[] indexImg = new int[numPixels];
-
-    public int getNumPixels() {
-        return numPixels;
-    }
 
     public void setNumPixels(int numPixels) {
         this.numPixels = numPixels;
@@ -62,8 +56,21 @@ public class ScanConversion {
         this.indexData = indexData;
     }
 
-    public ScanConversion(int numPixels) {
-        this.numPixels = numPixels;
+    public BufferedImage getBufferedImage() {
+        return bufferedImage;
+    }
+
+    public void setBufferedImage(BufferedImage bufferedImage) {
+        this.bufferedImage = bufferedImage;
+    }
+
+    private BufferedImage bufferedImage;
+
+    public int getNumPixels() {
+        return numPixels;
+    }
+
+    public ScanConversion() {
     }
 
     /**
@@ -143,7 +150,7 @@ public class ScanConversion {
                 index_samp = (int)Math.floor(samp);
                 index_line = (int)Math.floor(line);
 
-            /*  Test whether the samples are outside the array        */
+                /*  Test whether the samples are outside the array        */
 
                 make_pixel = (index_samp >= 0) && (index_samp + 1 < N_samples)
                         && (index_line >= 0) && (index_line + 1 < N_lines);
@@ -151,9 +158,7 @@ public class ScanConversion {
                 if (make_pixel) {
                     samp_val = samp - index_samp;
                     line_val = line - index_line;
-
                 /*  Calculate the coefficients if necessary   */
-
                     weight_coef[ij_index_coef] = (1 - samp_val) * (1 - line_val) * scaling;
                     weight_coef[ij_index_coef + 1] = samp_val * (1 - line_val) * scaling;
                     weight_coef[ij_index_coef + 2] = (1 - samp_val) * line_val * scaling;
@@ -161,6 +166,7 @@ public class ScanConversion {
 
                     index_samp_line[ij_index] = index_samp + index_line * N_samples;
                     image_index[ij_index] = (Nx - j - 1) * Nz + i;
+
                     ij_index++;
                     ij_index_coef = ij_index_coef + 4;
                 }
@@ -182,14 +188,14 @@ public class ScanConversion {
     }
 
     private void make_interpolation (char envelope_data[],   /*  The envelope detected and log-compressed data */
-                             int            N_samples,        /*  Number of samples in one envelope line        */
+                                     int            N_samples,        /*  Number of samples in one envelope line        */
 
-                             int            index_samp_line[], /*  Index for the data sample number              */
-                             int            image_index[],     /*  Index for the image matrix                    */
-                             double          weight_coef[],     /*  The weight table                              */
-                             int            N_values,         /*  Number of values to calculate in the image      */
+                                     int            index_samp_line[], /*  Index for the data sample number              */
+                                     int            image_index[],     /*  Index for the image matrix                    */
+                                     double          weight_coef[],     /*  The weight table                              */
+                                     int            N_values,         /*  Number of values to calculate in the image      */
 
-                             char image[]            /*  The resulting image                           */
+                                     char image[]            /*  The resulting image                           */
     ) {
         int           i;                 /*  Integer loop counter                */
         int           ij_index_coef;     /*  Index into coefficient array        */
@@ -202,43 +208,71 @@ public class ScanConversion {
             weight_index = ij_index_coef;
             env_index = index_samp_line[i];
             image[image_index[i]]= (char)(
-                      weight_coef[weight_index] * envelope_data[env_index]
-                    + weight_coef[weight_index + 1] * envelope_data[env_index + 1]
-                    + weight_coef[weight_index + 2] * envelope_data[env_index + N_samples]
-                    + weight_coef[weight_index + 3] * envelope_data[env_index + N_samples + 1]
-                    + 0.5);
+                    weight_coef[weight_index] * envelope_data[env_index]
+                            + weight_coef[weight_index + 1] * envelope_data[env_index + 1]
+                            + weight_coef[weight_index + 2] * envelope_data[env_index + N_samples]
+                            + weight_coef[weight_index + 3] * envelope_data[env_index + N_samples + 1]
+                            + 0.5);
             ij_index_coef = ij_index_coef + 4;
-
-
         }
     }
 
     public void compute_tables() {
-		double start_depth = Constants.PreProcParam.RADIAL_IMG_INIT; /*  Depth for start of image in meters    */
-		double image_size = Constants.PreProcParam.IMAGE_SIZE;      /*  Size of image in meters               */
+        double start_depth = Constants.PreProcParam.RADIAL_IMG_INIT; /*  Depth for start of image in meters    */
+        double image_size = Constants.PreProcParam.IMAGE_SIZE;      /*  Size of image in meters               */
 
-		double start_of_data = Constants.PreProcParam.STEP_RADIAL_INIT;   /*  Depth for start of data in meters     */
-		double delta_r = Constants.PreProcParam.RADIAL_DATA_INIT * Math.floor(Constants.PreProcParam.NUM_SAMPLES / 1024); /*  Sampling interval for data in meters  */
-		int N_samples  = (int) Math.floor(Constants.PreProcParam.NUM_SAMPLES / 1024);       /*  Number of data samples                */
+        double start_of_data = Constants.PreProcParam.STEP_RADIAL_INIT;   /*  Depth for start of data in meters     */
+        double delta_r = Constants.PreProcParam.RADIAL_DATA_INIT * Math.floor(Constants.PreProcParam.NUM_SAMPLES / 1024); /*  Sampling interval for data in meters  */
+        int N_samples  = (int) Math.floor(Constants.PreProcParam.NUM_SAMPLES / 10);       /*  Number of data samples                */
 
-		double theta_start = Constants.PreProcParam.NUM_LINES/ 2 * start_depth;     /*  Angle for first line in image         */
-		double delta_theta = - Constants.PreProcParam.STEP_ANGLE_INIT; /*  Angle between individual lines        */
-		int N_lines = Constants.PreProcParam.NUM_LINES;         /*  Number of acquired lines              */
+        double theta_start = Constants.PreProcParam.NUM_LINES/ 2 * start_depth;     /*  Angle for first line in image         */
+        double delta_theta = - Constants.PreProcParam.STEP_ANGLE_INIT; /*  Angle between individual lines        */
 
-		double scaling = Constants.PreProcParam.SCALE_FACTOR;         /*  Scaling factor form envelope to image */
-		int Nz = Constants.PreProcParam.N_z;              /*  Size of image in pixels               */
-		int Nx = Constants.PreProcParam.N_x;              /*  Size of image in pixels               */
+        int N_lines = Constants.PreProcParam.NUM_LINES;         /*  Number of acquired lines              */
+
+        double scaling = Constants.PreProcParam.SCALE_FACTOR;         /*  Scaling factor form envelope to image */
+        int Nz = Constants.PreProcParam.N_z;              /*  Size of image in pixels               */
+        int Nx = Constants.PreProcParam.N_x;              /*  Size of image in pixels               */
 
         int Ncoef_max = 4;
-		double weight_coef[] = new double[Nz * Nx * Ncoef_max];    //*  The weight table                      *//*
-		int index_samp_line[] = new int[Nz * Nx];  //Index for the data sample number
-		int image_index[] =new int[Nz * Nx];
-		make_tables(start_depth, image_size, start_of_data, delta_r, N_samples, theta_start, delta_theta, N_lines, scaling, Nz, Nx, weight_coef, index_samp_line, image_index);
-		// TODO convert arrays to fields.*/
+        double weight_coef[] = new double[Nz * Nx * Ncoef_max];    //*  The weight table                      *//*
+        int index_samp_line[] = new int[Nz * Nx];  //Index for the data sample number
+        int image_index[] = new int[Nz * Nx];
+
+        make_tables(start_depth, image_size, start_of_data, delta_r*10, N_samples, theta_start, delta_theta, N_lines, scaling, Nz, Nx, weight_coef, index_samp_line, image_index);
+        // TODO convert arrays to fields.*/
     }
 
     public void compute_interpolation() {
         compute_tables();
-        //TODO call make_interpolation with data from compute_tables and com.echopen.asso.echopen.utils.Constants
+        Data data = new Data("","","/data.csv");
+
+        int Nz = Constants.PreProcParam.N_z;
+        int Nx = Constants.PreProcParam.N_x;
+        char[] image = new char[Nz * Nx];
+
+        int N_samples =  (int) Math.floor(Constants.PreProcParam.NUM_SAMPLES / 10);
+        make_interpolation(data.getEnvelopeData(), N_samples,this.indexData, this.indexImg, this.weight, this.numPixels, image);
+
+        int[] num = new int[Nz * Nx];
+
+        for (int i = 0; i < Nz * Nx; i++)
+        {
+            num[i] = image[i];
+        }
+
+        DataBufferInt buffer = new DataBufferInt(num, num.length);
+
+        int[] bandMasks = {0xFF0000, 0xFF00, 0xFF, 0xFF000000};
+        WritableRaster raster = Raster.createPackedRaster(buffer, Nz, Nx, Nz, bandMasks, null);
+        bufferedImage = new BufferedImage(Nz, Nx, BufferedImage.TYPE_BYTE_GRAY);
+        bufferedImage.setData(raster);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (bufferedImage != null)
+            g.drawImage(bufferedImage, 0, 0, null);
     }
 }

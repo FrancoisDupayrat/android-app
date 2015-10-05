@@ -7,13 +7,13 @@ public class Data
 
     private String description;
 
-    private int image;
+    private char[] envelopeData;
 
-    public Data(String title, String description, int image)
+    public Data(String title, String description, char[] envelopeData)
     {
         this.title = title;
         this.description = description;
-        this.image = image;
+        this.envelopeData = envelopeData;
     }
 
     public String getTitle()
@@ -41,15 +41,15 @@ public class Data
     }
 
 
-    public int getImage()
+    public char[] getEnvelopeData()
     {
-        return image;
+        return envelopeData;
     }
 
 
-    public void setImage(int image)
+    public void setImage(char[] envelopeData)
     {
-        this.image = image;
+        this.envelopeData = envelopeData;
     }
 
 }

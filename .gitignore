@@ -5,3 +5,7 @@
 .DS_Store
 /build
 /captures
+phantom/test_data/.idea/
+phantom/test_data/out/
+
+
