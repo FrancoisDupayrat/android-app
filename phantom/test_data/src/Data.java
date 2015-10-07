@@ -65,12 +65,11 @@ public class Data
             while ((line = br.readLine()) != null) {
                 String[] string_tmp_data = line.split(cvsSplitBy);
                 char[] char_tmp_data = new char[string_tmp_data.length];
-                for(int index=0;index<string_tmp_data.length;index++) {
+                for (int index = 0; index < string_tmp_data.length; index++) {
                     char_tmp_data[index] = (char) Integer.parseInt(string_tmp_data[index]);
                 }
                 envelopeData = Data.objArrayConcat(envelopeData, char_tmp_data);
             }
-
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -86,6 +85,8 @@ public class Data
         }
     }
 
+    /* this method can be useful if we have data to be concatenated in horizontal way */
+
     public static char[] objArrayConcat(char[] o1, char[] o2)
     {
         char[] ret = new char[o1.length + o2.length];
@@ -95,5 +96,4 @@ public class Data
 
         return ret;
     }
-
 }

@@ -1,6 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.IOException;
 
 /**
  * Created by mehdibenchoufi on 16/09/15.
@@ -176,7 +180,6 @@ public class ScanConversion extends JPanel {
         }
         N_values = ij_index;
         //System.out.println("Table has now been set-up, %d x %d, %d %d values\n",Nz,Nx,ij_index, N_values);
-
         // as for a test purpose
         this.numPixels = N_values;
         this.indexData = index_samp_line;
@@ -184,7 +187,6 @@ public class ScanConversion extends JPanel {
         this.weight =  weight_coef;
 
         return N_values;
-
     }
 
     private void make_interpolation (char envelope_data[],   /*  The envelope detected and log-compressed data */
@@ -222,11 +224,12 @@ public class ScanConversion extends JPanel {
         double image_size = Constants.PreProcParam.IMAGE_SIZE;      /*  Size of image in meters               */
 
         double start_of_data = Constants.PreProcParam.STEP_RADIAL_INIT;   /*  Depth for start of data in meters     */
-        double delta_r = Constants.PreProcParam.RADIAL_DATA_INIT * Math.floor(Constants.PreProcParam.NUM_SAMPLES / 1024); /*  Sampling interval for data in meters  */
-        int N_samples  = (int) Math.floor(Constants.PreProcParam.NUM_SAMPLES / 10);       /*  Number of data samples                */
+        double delta_r = Constants.PreProcParam.RADIAL_DATA_INIT; /*  Sampling interval for data in meters  */
+        int N_samples  = (int) Math.floor(Constants.PreProcParam.NUM_SAMPLES);       /*  Number of data samples                */
 
-        double theta_start = Constants.PreProcParam.NUM_LINES/ 2 * start_depth;     /*  Angle for first line in image         */
-        double delta_theta = - Constants.PreProcParam.STEP_ANGLE_INIT; /*  Angle between individual lines        */
+        double delta_theta = Constants.PreProcParam.STEP_ANGLE_INIT; /*  Angle between individual lines        */
+        double theta_start = Constants.PreProcParam.NUM_LINES/ 2 * delta_theta;     /*  Angle for first line in image         */
+
 
         int N_lines = Constants.PreProcParam.NUM_LINES;         /*  Number of acquired lines              */
 
@@ -239,31 +242,37 @@ public class ScanConversion extends JPanel {
         int index_samp_line[] = new int[Nz * Nx];  //Index for the data sample number
         int image_index[] = new int[Nz * Nx];
 
-        make_tables(start_depth, image_size, start_of_data, delta_r*10, N_samples, theta_start, delta_theta, N_lines, scaling, Nz, Nx, weight_coef, index_samp_line, image_index);
+        make_tables(start_depth, image_size, start_of_data, delta_r, N_samples, theta_start, -delta_theta, N_lines, scaling, Nz, Nx, weight_coef, index_samp_line, image_index);
         // TODO convert arrays to fields.*/
     }
 
-    public void compute_interpolation() {
-        compute_tables();
+    public void compute_interpolation() throws IOException {
         Data data = new Data("","","/data.csv");
+        char[] envelope_data = data.getEnvelopeData();
+
+        // set data.getEnvelopeData in envelope_data for measure performance that begins here
+
+        compute_tables();
 
         int Nz = Constants.PreProcParam.N_z;
         int Nx = Constants.PreProcParam.N_x;
         char[] image = new char[Nz * Nx];
+        int N_samples =  (int) Math.floor(Constants.PreProcParam.NUM_SAMPLES);
 
-        int N_samples =  (int) Math.floor(Constants.PreProcParam.NUM_SAMPLES / 10);
-        make_interpolation(data.getEnvelopeData(), N_samples,this.indexData, this.indexImg, this.weight, this.numPixels, image);
+        make_interpolation(envelope_data, N_samples, this.indexData, this.indexImg, this.weight, this.numPixels, image);
+
+        // end of performance measure
 
         int[] num = new int[Nz * Nx];
-
-        for (int i = 0; i < Nz * Nx; i++)
+        for (int i = 0; i < Nz; i++)
         {
-            num[i] = image[i];
+            for (int j = 0; j < Nx ; j++) {
+                num[j*Nz + i] = image[j + Nx*i];
+            }
         }
 
         DataBufferInt buffer = new DataBufferInt(num, num.length);
-
-        int[] bandMasks = {0xFF0000, 0xFF00, 0xFF, 0xFF000000};
+        int[] bandMasks = {0xFF};
         WritableRaster raster = Raster.createPackedRaster(buffer, Nz, Nx, Nz, bandMasks, null);
         bufferedImage = new BufferedImage(Nz, Nx, BufferedImage.TYPE_BYTE_GRAY);
         bufferedImage.setData(raster);
